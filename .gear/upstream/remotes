@@ -1,0 +1,3 @@
+[remote "upstream"]
+	url = https://github.com/aaalgo/kgraph.git
+	fetch = +refs/heads/*:refs/remotes/upstream/*

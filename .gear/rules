@@ -1,0 +1,3 @@
+tar: v@version@:.
+spec: .gear/libqpbo.spec
+diff: v@version@:. . exclude=.gear/
