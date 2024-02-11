@@ -509,7 +509,7 @@ template <typename REAL>
 		if (IsNode0(j))
 		{
 			ComputeWeights(E00, E01, E10, E11, ci, cj, cij, cji);
-			
+
 			i->tr_cap += ci;
 			j->tr_cap += cj;
 			a->r_cap += cij;
@@ -548,7 +548,7 @@ template <typename REAL>
 		{
 			j = GetMate1(j);
 			ComputeWeights(E01, E00, E11, E10, ci, cj, cij, cji);
-			
+
 			i->tr_cap += ci;
 			j->tr_cap -= cj;
 			a->r_cap += cij;

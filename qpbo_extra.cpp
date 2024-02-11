@@ -200,7 +200,7 @@ template <typename REAL>
 
 		if (a1->r_cap + a1->sister->r_cap >= a2->r_cap + a2->sister->r_cap) x = 1;
 		else // swap a1 <-> a2
-		{		
+		{
 			Arc* tmp;
 			tmp = a1; a1 = a2; a2 = tmp;
 			_a1[0] = a1;
@@ -587,7 +587,7 @@ template <typename REAL>
 		} while (mapping[j_index] < 0);
 		y[x] = mapping[j_index];
 		y[1-x] = mapping[j_index] ^ 1;
-		
+
 		x = 0;
 		j_index = i_index;
 		do
@@ -1191,6 +1191,7 @@ template <typename REAL>
 		maxflow(true);
 	}
 
+	int fixed = 0;
 	for (p=0; p<N; p++)
 	{
 		i_index = order_array[p];
@@ -1204,6 +1205,7 @@ template <typename REAL>
 		{
 			continue;
 		}
+		++fixed;
 
 		REAL INFTY0 = DetermineSaturation(i);
 		REAL INFTY1 = DetermineSaturation(_i[1]);
@@ -1220,6 +1222,7 @@ template <typename REAL>
 		AddUnaryTerm(i, 0, INFTY);
 		maxflow(true);
 	}
+	printf("Fixed %i of %i unknown nodes (%f %%)\n", fixed, N, 100.0f * fixed / N);
 
 	if (fixed_nodes) memset(fixed_nodes, 0, GetNodeNum()*sizeof(int));
 	for (ptr=fix_node_info_list->ScanFirst(); ptr; ptr=fix_node_info_list->ScanNext())
