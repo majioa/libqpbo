@@ -45,8 +45,8 @@ using namespace qpbo;
 */
 
 
-template <typename REAL>
-	inline void QPBO<REAL>::set_active(Node *i)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::set_active(Node *i)
 {
 	if (!i->next)
 	{
@@ -63,8 +63,8 @@ template <typename REAL>
 	If it is connected to the sink, it stays in the list,
 	otherwise it is removed from the list
 */
-template <typename REAL>
-	inline typename QPBO<REAL>::Node* QPBO<REAL>::next_active()
+template <typename QPBO_REAL>
+	inline typename QPBO<QPBO_REAL>::Node* QPBO<QPBO_REAL>::next_active()
 {
 	Node *i;
 
@@ -91,8 +91,8 @@ template <typename REAL>
 
 /***********************************************************************/
 
-template <typename REAL>
-	inline void QPBO<REAL>::set_orphan_front(Node *i)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::set_orphan_front(Node *i)
 {
 	nodeptr *np;
 	i -> parent = QPBO_MAXFLOW_ORPHAN;
@@ -102,8 +102,8 @@ template <typename REAL>
 	orphan_first = np;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::set_orphan_rear(Node *i)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::set_orphan_rear(Node *i)
 {
 	nodeptr *np;
 	i -> parent = QPBO_MAXFLOW_ORPHAN;
@@ -117,8 +117,8 @@ template <typename REAL>
 
 /***********************************************************************/
 
-template <typename REAL>
-	inline void QPBO<REAL>::add_to_changed_list(Node *i)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::add_to_changed_list(Node *i)
 {
 	if (keep_changed_list)
 	{
@@ -134,8 +134,8 @@ template <typename REAL>
 
 /***********************************************************************/
 
-template <typename REAL>
-	void QPBO<REAL>::maxflow_init()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::maxflow_init()
 {
 	Node *i;
 
@@ -176,8 +176,8 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	void QPBO<REAL>::maxflow_reuse_trees_init()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::maxflow_reuse_trees_init()
 {
 	Node* i;
 	Node* j;
@@ -270,12 +270,12 @@ template <typename REAL>
 	//test_consistency();
 }
 
-template <typename REAL>
-	void QPBO<REAL>::augment(Arc *middle_arc)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::augment(Arc *middle_arc)
 {
 	Node *i;
 	Arc *a;
-	REAL bottleneck;
+	QPBO_REAL bottleneck;
 
 
 	/* 1. Finding bottleneck capacity */
@@ -339,8 +339,8 @@ template <typename REAL>
 
 /***********************************************************************/
 
-template <typename REAL>
-	void QPBO<REAL>::process_source_orphan(Node *i)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::process_source_orphan(Node *i)
 {
 	Node *j;
 	Arc *a0, *a0_min = NULL, *a;
@@ -416,8 +416,8 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	void QPBO<REAL>::process_sink_orphan(Node *i)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::process_sink_orphan(Node *i)
 {
 	Node *j;
 	Arc *a0, *a0_min = NULL, *a;
@@ -495,8 +495,8 @@ template <typename REAL>
 
 /***********************************************************************/
 
-template <typename REAL>
-	void QPBO<REAL>::maxflow(bool reuse_trees, bool _keep_changed_list)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::maxflow(bool reuse_trees, bool _keep_changed_list)
 {
 	Node *i, *j, *current_node = NULL;
 	Arc *a;
@@ -640,8 +640,8 @@ template <typename REAL>
 /***********************************************************************/
 
 
-template <typename REAL>
-	void QPBO<REAL>::test_consistency(Node* current_node)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::test_consistency(Node* current_node)
 {
 	Node *i;
 	Arc *a;

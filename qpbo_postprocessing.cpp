@@ -28,8 +28,8 @@
 using namespace qpbo;
 
 
-template <typename REAL>
-	void QPBO<REAL>::ComputeWeakPersistencies()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::ComputeWeakPersistencies()
 {
 	if (stage == 0) return;
 
@@ -140,8 +140,8 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	void QPBO<REAL>::Stitch()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::Stitch()
 {
 	if (stage == 0) return;
 

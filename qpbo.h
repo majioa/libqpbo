@@ -84,10 +84,10 @@
 
 	int main()
 	{
-		typedef int REAL;
-		QPBO<REAL>* q;
+		typedef int QPBO_REAL;
+		QPBO<QPBO_REAL>* q;
 
-		q = new QPBO<REAL>(2, 1); // max number of nodes & edges
+		q = new QPBO<QPBO_REAL>(2, 1); // max number of nodes & edges
 		q->AddNode(2); // add two nodes
 
 		q->AddUnaryTerm(0, 0, 2); // add term 2*x
@@ -123,11 +123,11 @@
 
 namespace qpbo {
 
-// REAL: can be int, float, double.
+// QPBO_REAL: can be int, float, double.
 // Current instantiations are in instances.inc
 // NOTE: WITH FLOATING POINT NUMBERS ERRORS CAN ACCUMULATE.
 // IT IS STRONGLY ADVISABLE TO USE INTEGERS!!! (IT IS ALSO *MUCH* FASTER).
-template <typename REAL> class QPBO
+template <typename QPBO_REAL> class QPBO
 {
 public:
 	typedef int NodeId;
@@ -151,7 +151,7 @@ public:
 	// a larger value of edge_num_max (e.g. twice the number of edges in the original energy).
 	QPBO(int node_num_max, EdgeId edge_num_max, void (*err_function)(const char *) = NULL);
 	// Copy constructor
-	QPBO(QPBO<REAL>& q);
+	QPBO(QPBO<QPBO_REAL>& q);
 
 	// Destructor
 	~QPBO();
@@ -160,7 +160,7 @@ public:
 	// Returns true if success, false otherwise.
 	bool Save(char* filename);
 	// Load energy from a text file. Current terms of the energy (if any) are destroyed.
-	// Type identifier in the file (int/float/double) should match the type QPBO::REAL.
+	// Type identifier in the file (int/float/double) should match the type QPBO::QPBO_REAL.
 	// Returns true if success, false otherwise.
 	bool Load(char* filename);
 
@@ -183,14 +183,14 @@ public:
 
 	// Adds unary term Ei(x_i) to the energy function with cost values Ei(0)=E0, Ei(1)=E1.
 	// Can be called multiple times for each node.
-	void AddUnaryTerm(NodeId i, REAL E0, REAL E1);
+	void AddUnaryTerm(NodeId i, QPBO_REAL E0, QPBO_REAL E1);
 
 	// Adds pairwise term Eij(x_i, x_j) with cost values E00, E01, E10, E11.
 	// IMPORTANT: see note about the constructor
-	EdgeId AddPairwiseTerm(NodeId i, NodeId j, REAL E00, REAL E01, REAL E10, REAL E11);
+	EdgeId AddPairwiseTerm(NodeId i, NodeId j, QPBO_REAL E00, QPBO_REAL E01, QPBO_REAL E10, QPBO_REAL E11);
 
 	// This function modifies an already existing pairwise term.
-	void AddPairwiseTerm(EdgeId e, NodeId i, NodeId j, REAL E00, REAL E01, REAL E10, REAL E11);
+	void AddPairwiseTerm(EdgeId e, NodeId i, NodeId j, QPBO_REAL E00, QPBO_REAL E01, QPBO_REAL E10, QPBO_REAL E11);
 
 	// If AddPairwiseTerm(i,j,...) has been called twice for some pairs of nodes,
 	// then MergeParallelEdges() must be called before calling Solve()/Probe()/Improve().
@@ -222,8 +222,8 @@ public:
 	EdgeId GetNextEdgeId(EdgeId e);
 
 	// Read current reparameterization. Cost values are multiplied by 2 in the returned result.
-	void GetTwiceUnaryTerm(NodeId i, REAL& E0, REAL& E1);
-	void GetTwicePairwiseTerm(EdgeId e, /*output*/ NodeId& i, NodeId& j, REAL& E00, REAL& E01, REAL& E10, REAL& E11);
+	void GetTwiceUnaryTerm(NodeId i, QPBO_REAL& E0, QPBO_REAL& E1);
+	void GetTwicePairwiseTerm(EdgeId e, /*output*/ NodeId& i, NodeId& j, QPBO_REAL& E00, QPBO_REAL& E01, QPBO_REAL& E10, QPBO_REAL& E11);
 
 	///////////////////////////////////////////////////////////////
 
@@ -234,11 +234,11 @@ public:
 	// option == 0: returns 2 times the energy of internally stored solution which would be
 	//              returned by GetLabel(). Negative values (unknown) are treated as 0.
 	// option == 1: returns 2 times the energy of solution set by the user (via SetLabel()).
-	REAL ComputeTwiceEnergy(int option = 0);
+	QPBO_REAL ComputeTwiceEnergy(int option = 0);
 	// labeling must be an array of size nodeNum. Values other than 1 are treated as 0.
-	REAL ComputeTwiceEnergy(int* labeling);
+	QPBO_REAL ComputeTwiceEnergy(int* labeling);
 	// returns the lower bound defined by current reparameterizaion.
-	REAL ComputeTwiceLowerBound();
+	QPBO_REAL ComputeTwiceLowerBound();
 
 
 
@@ -340,7 +340,7 @@ public:
 		int weak_persistencies; // 0: use only strong persistency
 		                        // 1: use weak persistency in the main loop (but not for probing operations)
 
-		REAL C; // Large constant used inside Probe() for enforcing directed constraints.
+		QPBO_REAL C; // Large constant used inside Probe() for enforcing directed constraints.
 		        // Note: small value may increase the number of iterations, large value may cause overflow.
 
 		int* order_array; // if array of size nodeNum() is provided, then nodes are tested in the order order_array[0], order_array[1], ...
@@ -430,7 +430,7 @@ private:
 			};
 		};
 
-		REAL		tr_cap;		// if tr_cap > 0 then tr_cap is residual capacity of the Arc SOURCE->Node
+		QPBO_REAL		tr_cap;		// if tr_cap > 0 then tr_cap is residual capacity of the Arc SOURCE->Node
 								// otherwise         -tr_cap is residual capacity of the Arc Node->SINK
 
 		bool is_sink : true;	// flag showing whether the node is in the source or in the sink tree (if parent!=NULL)
@@ -453,7 +453,7 @@ private:
 		Arc			*next;		// next Arc with the same originating Node
 		Arc			*sister;	// reverse Arc
 
-		REAL		r_cap;		// residual capacity
+		QPBO_REAL		r_cap;		// residual capacity
 	};
 # pragma pack ()
 
@@ -483,7 +483,7 @@ private:
 										// with a corresponding error message
 										// (or exit(1) is called if it's NULL)
 
-	REAL	zero_energy; // energy of solution (0,...,0)
+	QPBO_REAL	zero_energy; // energy of solution (0,...,0)
 
 	// reusing trees & list of changed pixels
 	int					maxflow_iteration; // counter
@@ -504,7 +504,7 @@ private:
 	bool all_edges_submodular;
 	void TransformToSecondStage(bool copy_trees);
 
-	static void ComputeWeights(REAL A, REAL B, REAL C, REAL D, REAL& ci, REAL& cj, REAL& cij, REAL& cji);
+	static void ComputeWeights(QPBO_REAL A, QPBO_REAL B, QPBO_REAL C, QPBO_REAL D, QPBO_REAL& ci, QPBO_REAL& cj, QPBO_REAL& cij, QPBO_REAL& cji);
 	bool IsNode0(Node* i) { return (i<nodes[1]); }
 	Node* GetMate0(Node* i) { code_assert(i< nodes[1]); return (Node*)((char*)i + node_shift); }
 	Node* GetMate1(Node* i) { code_assert(i>=nodes[1]); return (Node*)((char*)i - node_shift); }
@@ -520,8 +520,8 @@ private:
 
 	void TestRelaxedSymmetry(); // debug function
 
-	REAL DetermineSaturation(Node* i);
-	void AddUnaryTerm(Node* i, REAL E0, REAL E1);
+	QPBO_REAL DetermineSaturation(Node* i);
+	void AddUnaryTerm(Node* i, QPBO_REAL E0, QPBO_REAL E1);
 	void FixNode(Node* i, int x); // fix i to label x. there must hold IsNode0(i).
 	void ContractNodes(Node* i, Node* j, int swap); // there must hold IsNode0(i) && IsNode0(j) && (swap==0 || swap==1)
 	                                                // enforces constraint i->label = (j->label + swap) mod 2
@@ -537,7 +537,7 @@ private:
 
 	static void ComputeRandomPermutation(int N, int* permutation);
 
-	struct FixNodeInfo { Node* i; REAL INFTY; };
+	struct FixNodeInfo { Node* i; QPBO_REAL INFTY; };
 	Block<FixNodeInfo>* fix_node_info_list;
 
 	/////////////////////////////////////////////////////////////////////////
@@ -587,8 +587,8 @@ private:
 
 
 
-template <typename REAL>
-	inline typename QPBO<REAL>::NodeId QPBO<REAL>::AddNode(int num)
+template <typename QPBO_REAL>
+	inline typename QPBO<QPBO_REAL>::NodeId QPBO<QPBO_REAL>::AddNode(int num)
 {
 	user_assert(num >= 0);
 
@@ -614,8 +614,8 @@ template <typename REAL>
 	return i;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::AddUnaryTerm(NodeId i, REAL E0, REAL E1)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::AddUnaryTerm(NodeId i, QPBO_REAL E0, QPBO_REAL E1)
 {
 	user_assert(i >= 0 && i < node_num);
 
@@ -625,8 +625,8 @@ template <typename REAL>
 	zero_energy += E0;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::AddUnaryTerm(Node* i, REAL E0, REAL E1)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::AddUnaryTerm(Node* i, QPBO_REAL E0, QPBO_REAL E1)
 {
 	code_assert(i >= nodes[0] && i<node_last[0]);
 
@@ -636,8 +636,8 @@ template <typename REAL>
 	zero_energy += E0;
 }
 
-template <typename REAL>
-	inline int QPBO<REAL>::what_segment(Node* i, int default_segm)
+template <typename QPBO_REAL>
+	inline int QPBO<QPBO_REAL>::what_segment(Node* i, int default_segm)
 {
 	if (i->parent)
 	{
@@ -649,8 +649,8 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::mark_node(Node* i)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::mark_node(Node* i)
 {
 	if (!i->next)
 	{
@@ -663,16 +663,16 @@ template <typename REAL>
 	i->is_marked = true;
 }
 
-template <typename REAL>
-	inline int QPBO<REAL>::GetLabel(NodeId i)
+template <typename QPBO_REAL>
+	inline int QPBO<QPBO_REAL>::GetLabel(NodeId i)
 {
 	user_assert(i >= 0 && i < node_num);
 
 	return nodes[0][i].label;
 }
 
-template <typename REAL>
-	inline int QPBO<REAL>::GetRegion(NodeId i)
+template <typename QPBO_REAL>
+	inline int QPBO<QPBO_REAL>::GetRegion(NodeId i)
 {
 	user_assert(i >= 0 && i < node_num);
 	user_assert(stage == 1);
@@ -680,16 +680,16 @@ template <typename REAL>
 	return nodes[0][i].region;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::SetLabel(NodeId i, char label)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::SetLabel(NodeId i, char label)
 {
 	user_assert(i >= 0 && i < node_num);
 
 	nodes[0][i].user_label = label;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::GetTwiceUnaryTerm(NodeId i, REAL& E0, REAL& E1)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::GetTwiceUnaryTerm(NodeId i, QPBO_REAL& E0, QPBO_REAL& E1)
 {
 	user_assert(i >= 0 && i < node_num);
 
@@ -698,8 +698,8 @@ template <typename REAL>
 	else            E1 = nodes[0][i].tr_cap - nodes[1][i].tr_cap;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::GetTwicePairwiseTerm(EdgeId e, NodeId& _i, NodeId& _j, REAL& E00, REAL& E01, REAL& E10, REAL& E11)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::GetTwicePairwiseTerm(EdgeId e, NodeId& _i, NodeId& _j, QPBO_REAL& E00, QPBO_REAL& E01, QPBO_REAL& E10, QPBO_REAL& E11)
 {
 	user_assert(e >= 0 && arcs[0][2*e].sister);
 
@@ -735,14 +735,14 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	inline int QPBO<REAL>::GetNodeNum()
+template <typename QPBO_REAL>
+	inline int QPBO<QPBO_REAL>::GetNodeNum()
 {
 	return (int)(node_last[0] - nodes[0]);
 }
 
-template <typename REAL>
-	inline typename QPBO<REAL>::EdgeId QPBO<REAL>::GetNextEdgeId(EdgeId e)
+template <typename QPBO_REAL>
+	inline typename QPBO<QPBO_REAL>::EdgeId QPBO<QPBO_REAL>::GetNextEdgeId(EdgeId e)
 {
 	Arc* a;
 	for (a=&arcs[0][2*(++e)]; a<arc_max[0]; a+=2, e++)
@@ -752,17 +752,17 @@ template <typename REAL>
 	return -1;
 }
 
-template <typename REAL>
-	inline typename QPBO<REAL>::EdgeId QPBO<REAL>::GetMaxEdgeNum()
+template <typename QPBO_REAL>
+	inline typename QPBO<QPBO_REAL>::EdgeId QPBO<QPBO_REAL>::GetMaxEdgeNum()
 {
 	return (EdgeId)(arc_max[0]-arcs[0])/2;
 }
 
 
-template <typename REAL>
-	inline void QPBO<REAL>::ComputeWeights(
-	REAL A, REAL B, REAL C, REAL D, // input - E00=A, E01=B, E10=C, E11=D
-	REAL& ci, REAL& cj, REAL& cij, REAL& cji // output - edge weights
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::ComputeWeights(
+	QPBO_REAL A, QPBO_REAL B, QPBO_REAL C, QPBO_REAL D, // input - E00=A, E01=B, E10=C, E11=D
+	QPBO_REAL& ci, QPBO_REAL& cj, QPBO_REAL& cij, QPBO_REAL& cji // output - edge weights
 	)
 {
 	/*
