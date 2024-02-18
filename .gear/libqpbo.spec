@@ -2,7 +2,7 @@
 %define        origname qpbo
 
 Name:          lib%{origname}
-Version:       1.4.1
+Version:       1.5.0
 Release:       alt1
 Summary:       QPBO implementation by Vladimir Kolmogorov as a system library
 License:       BSD-2-Clause
@@ -56,7 +56,7 @@ and pairwise terms based on roof duality described in the following papers.
 
 %prep
 %setup
-%autopatch
+%autopatch -p1
 
 %build
 %cmake_insource
@@ -74,13 +74,16 @@ and pairwise terms based on roof duality described in the following papers.
 %doc CHANGES.TXT
 %_libdir/%{name}*.so
 %_includedir/%{origname}*
-%_pkgconfigdir/%name.pc
+%_pkgconfigdir/%origname.pc
+%_libdir/cmake/%origname/%origname-config.*
+%_libdir/cmake/%origname/%origname-targets*
 
 %files         devel-static
 %doc CHANGES.TXT
 %_libdir/%{name}*.a
+%_libdir/cmake/%origname/%origname-static-*
 
 
 %changelog
-* Sun Feb 11 2024 Pavel Skrylev <majioa@altlinux.org> 1.4.1-alt1
-- initial build v1.4.1 for Sisyphus
+* Sun Feb 11 2024 Pavel Skrylev <majioa@altlinux.org> 1.5.0-alt1
+- initial build v1.5.0 for Sisyphus

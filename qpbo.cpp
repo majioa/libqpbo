@@ -1,6 +1,7 @@
 /* qpbo.cpp */
 /*
     Copyright 2006-2008 Vladimir Kolmogorov (vnk@ist.ac.at).
+    Modifications Copyright 2018 Niels Jeppesen (niejep@dtu.dk).
 
     This file is part of QPBO.
 
@@ -27,8 +28,8 @@
 using namespace qpbo;
 
 
-template <typename REAL>
-	QPBO<REAL>::QPBO(int node_num_max, int edge_num_max, void (*err_function)(const char *))
+template <typename QPBO_REAL>
+	QPBO<QPBO_REAL>::QPBO(int node_num_max, EdgeId edge_num_max, void (*err_function)(const char *))
 	: node_num(0),
 	  nodeptr_block(NULL),
 	  changed_list(NULL),
@@ -61,8 +62,8 @@ template <typename REAL>
 	InitFreeList();
 }
 
-template <typename REAL>
-	void QPBO<REAL>::InitFreeList()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::InitFreeList()
 {
 	Arc* a;
 	Arc* a_last_free;
@@ -78,8 +79,8 @@ template <typename REAL>
 	if (a_last_free) a_last_free->next = NULL;
 }
 
-template <typename REAL>
-	QPBO<REAL>::QPBO(QPBO<REAL>& q)
+template <typename QPBO_REAL>
+	QPBO<QPBO_REAL>::QPBO(QPBO<QPBO_REAL>& q)
 	: node_num(q.node_num),
 	  nodeptr_block(NULL),
 	  changed_list(NULL),
@@ -89,8 +90,8 @@ template <typename REAL>
 	  error_function(q.error_function),
 	  zero_energy(q.zero_energy)
 {
-	int node_num_max = q.node_shift/sizeof(Node);
-	int arc_num_max = (int)(q.arc_max[0] - q.arcs[0]);
+	long long node_num_max = q.node_shift/sizeof(Node);
+	EdgeId arc_num_max = (EdgeId)(q.arc_max[0] - q.arcs[0]);
 	Node* i;
 	Arc* a;
 
@@ -133,8 +134,8 @@ template <typename REAL>
 	InitFreeList();
 }
 
-template <typename REAL>
-	QPBO<REAL>::~QPBO()
+template <typename QPBO_REAL>
+	QPBO<QPBO_REAL>::~QPBO()
 {
 	if (nodeptr_block)
 	{
@@ -155,8 +156,8 @@ template <typename REAL>
 	free(arcs[0]);
 }
 
-template <typename REAL>
-	void QPBO<REAL>::Reset()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::Reset()
 {
 	node_last[0] = nodes[0];
 	node_last[1] = nodes[1];
@@ -188,8 +189,8 @@ template <typename REAL>
 	InitFreeList();
 }
 
-template <typename REAL>
-	void QPBO<REAL>::reallocate_nodes(int node_num_max_new)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::reallocate_nodes(int node_num_max_new)
 {
 	code_assert(node_num_max_new > node_shift/((int)sizeof(Node)));
 	Node* nodes_old[2] = { nodes[0], nodes[1] };
@@ -219,11 +220,11 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	void QPBO<REAL>::reallocate_arcs(int arc_num_max_new)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::reallocate_arcs(EdgeId arc_num_max_new)
 {
-	int arc_num_max_old = (int)(arc_max[0] - arcs[0]);
-	int arc_num_max = arc_num_max_new; if (arc_num_max & 1) arc_num_max ++;
+	EdgeId arc_num_max_old = (EdgeId)(arc_max[0] - arcs[0]);
+	EdgeId arc_num_max = arc_num_max_new; if (arc_num_max & 1) arc_num_max ++;
 	code_assert(arc_num_max > arc_num_max_old);
 	Arc* arcs_old[2] = { arcs[0], arcs[1] };
 
@@ -278,15 +279,15 @@ template <typename REAL>
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 
-template <typename REAL>
-	bool QPBO<REAL>::Save(char* filename)
+template <typename QPBO_REAL>
+	bool QPBO<QPBO_REAL>::Save(char* filename)
 {
-	int e;
-	int edge_num = 0;
+	EdgeId e;
+	EdgeId edge_num = 0;
 	for (e=GetNextEdgeId(-1); e>=0; e=GetNextEdgeId(e)) edge_num ++;
 
 	FILE* fp;
-	REAL E0, E1, E00, E01, E10, E11;
+	QPBO_REAL E0, E1, E00, E01, E10, E11;
 	int i, j;
 	const char* type_name;
 	const char* type_format;
@@ -299,7 +300,7 @@ template <typename REAL>
 	if (!fp) return false;
 
 	fprintf(fp, "nodes=%d\n", GetNodeNum());
-	fprintf(fp, "edges=%d\n", edge_num);
+	fprintf(fp, "edges=%lld\n", edge_num);
 	fprintf(fp, "labels=2\n");
 	fprintf(fp, "type=%s\n", type_name);
 	fprintf(fp, "\n");
@@ -308,7 +309,7 @@ template <typename REAL>
 	for (i=0; i<GetNodeNum(); i++)
 	{
 		GetTwiceUnaryTerm(i, E0, E1);
-		REAL delta = (E0 < E1) ? E0 : E1;
+		QPBO_REAL delta = (E0 < E1) ? E0 : E1;
 		fprintf(fp, FORMAT_LINE, i, (E0-delta)/factor, (E1-delta)/factor);
 	}
 	sprintf(FORMAT_LINE, "e %%d %%d %%%s %%%s %%%s %%%s\n", type_format, type_format, type_format, type_format);
@@ -321,18 +322,19 @@ template <typename REAL>
 	return true;
 }
 
-template <typename REAL>
-	bool QPBO<REAL>::Load(char* filename)
+template <typename QPBO_REAL>
+	bool QPBO<QPBO_REAL>::Load(char* filename)
 {
 	Reset();
 
 	FILE* fp;
-	REAL E0, E1, E00, E01, E10, E11;
+	QPBO_REAL E0, E1, E00, E01, E10, E11;
 	int i, j;
 	const char* type_name;
 	const char* type_format;
 	char LINE[256], FORMAT_LINE_NODE[64], FORMAT_LINE_EDGE[64];
-	int NODE_NUM, EDGE_NUM, K;
+	int NODE_NUM, K;
+	EdgeId EDGE_NUM;
 
 	get_type_information(type_name, type_format);
 
@@ -340,11 +342,11 @@ template <typename REAL>
 	if (!fp) { printf("Cannot open %s\n", filename); return false; }
 
 	if (fscanf(fp, "nodes=%d\n", &NODE_NUM) != 1) { printf("%s: wrong format\n", filename); fclose(fp); return false; }
-	if (fscanf(fp, "edges=%d\n", &EDGE_NUM) != 1) { printf("%s: wrong format\n", filename); fclose(fp); return false; }
+	if (fscanf(fp, "edges=%lld\n", &EDGE_NUM) != 1) { printf("%s: wrong format\n", filename); fclose(fp); return false; }
 	if (fscanf(fp, "labels=%d\n", &K) != 1) { printf("%s: wrong format\n", filename); fclose(fp); return false; }
 	if (K != 2) { printf("%s: wrong number of labels\n", filename); fclose(fp); return false; }
 	if (fscanf(fp, "type=%10s\n", LINE) != 1) { printf("%s: wrong format\n", filename); fclose(fp); return false; }
-	if (strcmp(LINE, type_name)) { printf("%s: type REAL mismatch\n", filename); fclose(fp); return false; }
+	if (strcmp(LINE, type_name)) { printf("%s: type QPBO_REAL mismatch\n", filename); fclose(fp); return false; }
 
 	AddNode(NODE_NUM+4);
 	node_num -= 4;
@@ -383,21 +385,21 @@ template <typename REAL>
 #define SET_TO(a, j)             (a)->head = (j);
 
 
-template <typename REAL>
-	typename QPBO<REAL>::EdgeId QPBO<REAL>::AddPairwiseTerm(NodeId _i, NodeId _j, REAL E00, REAL E01, REAL E10, REAL E11)
+template <typename QPBO_REAL>
+	typename QPBO<QPBO_REAL>::EdgeId QPBO<QPBO_REAL>::AddPairwiseTerm(NodeId _i, NodeId _j, QPBO_REAL E00, QPBO_REAL E01, QPBO_REAL E10, QPBO_REAL E11)
 {
 	user_assert(_i >= 0 && _i < node_num);
 	user_assert(_j >= 0 && _j < node_num);
 	user_assert(_i != _j);
 
-	REAL ci, cj, cij, cji;
+	QPBO_REAL ci, cj, cij, cji;
 
 	if (!first_free)
 	{
 		reallocate_arcs(2*(GetMaxEdgeNum() + GetMaxEdgeNum()/2));
 	}
 
-	EdgeId e = (int)(first_free - arcs[IsArc0(first_free) ? 0 : 1])/2;
+	EdgeId e = (EdgeId)(first_free - arcs[IsArc0(first_free) ? 0 : 1])/2;
 	first_free = first_free->next;
 
 	if (stage == 0)
@@ -484,15 +486,15 @@ template <typename REAL>
 	return e;
 }
 
-template <typename REAL>
-	void QPBO<REAL>::AddPairwiseTerm(EdgeId e, NodeId _i, NodeId _j, REAL E00, REAL E01, REAL E10, REAL E11)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::AddPairwiseTerm(EdgeId e, NodeId _i, NodeId _j, QPBO_REAL E00, QPBO_REAL E01, QPBO_REAL E10, QPBO_REAL E11)
 {
 	user_assert(e >= 0 && arcs[0][2*e].sister);
 	user_assert(arcs[0][2*e].head==&nodes[0][_i] || arcs[0][2*e].head==&nodes[1][_i] || arcs[0][2*e].head==&nodes[0][_j] || arcs[0][2*e].head==&nodes[1][_j]);
 	user_assert(arcs[0][2*e+1].head==&nodes[0][_i] || arcs[0][2*e+1].head==&nodes[1][_i] || arcs[0][2*e+1].head==&nodes[0][_j] || arcs[0][2*e+1].head==&nodes[1][_j]);
 	user_assert(_i != _j);
 
-	REAL delta, ci, cj, cij, cji;
+	QPBO_REAL delta, ci, cj, cij, cji;
 
 	if (stage == 0)
 	{
@@ -507,7 +509,7 @@ template <typename REAL>
 		if (IsNode0(j))
 		{
 			ComputeWeights(E00, E01, E10, E11, ci, cj, cij, cji);
-			
+
 			i->tr_cap += ci;
 			j->tr_cap += cj;
 			a->r_cap += cij;
@@ -546,7 +548,7 @@ template <typename REAL>
 		{
 			j = GetMate1(j);
 			ComputeWeights(E01, E00, E11, E10, ci, cj, cij, cji);
-			
+
 			i->tr_cap += ci;
 			j->tr_cap -= cj;
 			a->r_cap += cij;
@@ -651,8 +653,8 @@ template <typename REAL>
 	zero_energy += E00;
 }
 
-template <typename REAL>
-	void QPBO<REAL>::TransformToSecondStage(bool copy_trees)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::TransformToSecondStage(bool copy_trees)
 {
 	// add non-submodular edges
 	Node* i[2];
@@ -710,7 +712,7 @@ template <typename REAL>
 		{
 			i[1]->first = NULL;
 			i[1]->tr_cap = -i[0]->tr_cap;
-			i[1]->is_sink = i[0]->is_sink ^ 1;
+			i[1]->is_sink = i[0]->is_sink ^ true;
 			i[1]->DIST = i[0]->DIST;
 			i[1]->TS = i[0]->TS;
 
@@ -761,8 +763,8 @@ template <typename REAL>
 	stage = 1;
 }
 
-template <typename REAL>
-	void QPBO<REAL>::MergeParallelEdges()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::MergeParallelEdges()
 {
 	if (stage == 0) TransformToSecondStage(false);
 	Node* i;
@@ -793,8 +795,8 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	void QPBO<REAL>::Solve()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::Solve()
 {
 	Node* i;
 
@@ -822,11 +824,12 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	REAL QPBO<REAL>::ComputeTwiceEnergy(int option)
+template <typename QPBO_REAL>
+	QPBO_REAL QPBO<QPBO_REAL>::ComputeTwiceEnergy(int option)
 {
-	REAL E = 2*zero_energy, E1[2], E2[2][2];
-	int i, j, e;
+	QPBO_REAL E = 2*zero_energy, E1[2], E2[2][2];
+	int i, j;
+	EdgeId e;
 	int xi, xj;
 
 	for (i=0; i<GetNodeNum(); i++)
@@ -855,11 +858,12 @@ template <typename REAL>
 	return E;
 }
 
-template <typename REAL>
-	REAL QPBO<REAL>::ComputeTwiceEnergy(int* solution)
+template <typename QPBO_REAL>
+	QPBO_REAL QPBO<QPBO_REAL>::ComputeTwiceEnergy(int* solution)
 {
-	REAL E = 2*zero_energy, E1[2], E2[2][2];
-	int i, j, e;
+	QPBO_REAL E = 2*zero_energy, E1[2], E2[2][2];
+	int i, j;
+	EdgeId e;
 
 	for (i=0; i<GetNodeNum(); i++)
 	{
@@ -874,11 +878,12 @@ template <typename REAL>
 	return E;
 }
 
-template <typename REAL>
-	REAL QPBO<REAL>::ComputeTwiceLowerBound()
+template <typename QPBO_REAL>
+	QPBO_REAL QPBO<QPBO_REAL>::ComputeTwiceLowerBound()
 {
-	REAL lowerBound = 2*zero_energy, E0, E1, E00, E01, E10, E11;
-	int i, j, e;
+	QPBO_REAL lowerBound = 2*zero_energy, E0, E1, E00, E01, E10, E11;
+	int i, j;
+	EdgeId e;
 
 	for (i=0; i<GetNodeNum(); i++)
 	{
@@ -894,12 +899,12 @@ template <typename REAL>
 	return lowerBound;
 }
 
-template <typename REAL>
-	void QPBO<REAL>::TestRelaxedSymmetry()
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::TestRelaxedSymmetry()
 {
 	Node* i;
 	Arc* a;
-	REAL c1, c2;
+	QPBO_REAL c1, c2;
 
 	if (stage == 0) return;
 

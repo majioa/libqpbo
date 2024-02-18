@@ -1,6 +1,7 @@
 /* QPBO_extra.cpp */
 /*
     Copyright 2006-2008 Vladimir Kolmogorov (vnk@ist.ac.at).
+    Modifications Copyright 2018 Niels Jeppesen (niejep@dtu.dk).
 
     This file is part of QPBO.
 
@@ -27,13 +28,15 @@
 
 using namespace qpbo;
 
+// Pour contourner le warning  [-Werror=unused-but-set-variable] de Gcc 4.6  FakeUseIt
+template <class Type> void GccUse(const Type & ) {}
 
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 
-template <typename REAL>
-	void QPBO<REAL>::ComputeRandomPermutation(int N, int* permutation)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::ComputeRandomPermutation(int N, int* permutation)
 {
 	int i, j, k;
 	for (i=0; i<N; i++)
@@ -48,8 +51,8 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	void QPBO<REAL>::MergeMappings(int nodeNum0, int* mapping0, int* mapping1)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::MergeMappings(int nodeNum0, int* mapping0, int* mapping1)
 {
 	int i;
 	for (i=0; i<nodeNum0; i++)
@@ -72,8 +75,8 @@ template <typename REAL>
 #define SET_TO(a, j)             (a)->head = (j);
 
 
-template <typename REAL>
-	inline void QPBO<REAL>::FixNode(Node* i, int x)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::FixNode(Node* i, int x)
 {
 	Node* _i[2] = { i, GetMate0(i) };
 	Arc* a;
@@ -102,8 +105,8 @@ template <typename REAL>
 	_i[0]->first = _i[1]->first = NULL;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::ContractNodes(Node* i, Node* j, int swap)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::ContractNodes(Node* i, Node* j, int swap)
 {
 	code_assert(IsNode0(i) && IsNode0(j) && swap>=0 && swap<=1);
 
@@ -156,13 +159,13 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	int QPBO<REAL>::MergeParallelEdges(Arc* a1, Arc* a2)
+template <typename QPBO_REAL>
+	int QPBO<QPBO_REAL>::MergeParallelEdges(Arc* a1, Arc* a2)
 {
 	code_assert(a1->sister->head == a2->sister->head && IsNode0(a1->sister->head));
 	code_assert(a1->head == a2->head || a1->head == GetMate(a2->head));
 
-	REAL delta;
+	QPBO_REAL delta;
 	int x;
 	Node* _i[2];
 	Node* _j[2];
@@ -199,7 +202,7 @@ template <typename REAL>
 
 		if (a1->r_cap + a1->sister->r_cap >= a2->r_cap + a2->sister->r_cap) x = 1;
 		else // swap a1 <-> a2
-		{		
+		{
 			Arc* tmp;
 			tmp = a1; a1 = a2; a2 = tmp;
 			_a1[0] = a1;
@@ -211,7 +214,7 @@ template <typename REAL>
 		_j[0] = a1->head;
 		_j[1] = a2->head;
 
-		REAL ci, cj, cij, cji;
+		QPBO_REAL ci, cj, cij, cji;
 		ci = a2->sister->r_cap - a2->r_cap;
 		cj = 0;
 		cij = -a2->r_cap;
@@ -260,12 +263,12 @@ template <typename REAL>
 	return x;
 }
 
-template <typename REAL>
-	inline REAL QPBO<REAL>::DetermineSaturation(Node* i)
+template <typename QPBO_REAL>
+	inline QPBO_REAL QPBO<QPBO_REAL>::DetermineSaturation(Node* i)
 {
 	Arc* a;
-	REAL c1 = -i->tr_cap;
-	REAL c2 = i->tr_cap;
+	QPBO_REAL c1 = -i->tr_cap;
+	QPBO_REAL c2 = i->tr_cap;
 	for (a=i->first; a; a=a->next)
 	{
 		c1 += a->r_cap;
@@ -275,12 +278,12 @@ template <typename REAL>
 	return (c1 > c2) ? c1 : c2;
 }
 
-template <typename REAL>
-	inline void QPBO<REAL>::AddDirectedConstraint(Node* i, Node* j, int xi, int xj)
+template <typename QPBO_REAL>
+	inline void QPBO<QPBO_REAL>::AddDirectedConstraint(Node* i, Node* j, int xi, int xj)
 {
 	code_assert(first_free && IsNode0(i) && IsNode0(j) && i!=j);
 
-	int e = ((int)(first_free - arcs[IsArc0(first_free) ? 0 : 1])) & (~1);
+	EdgeId e = ((EdgeId)(first_free - arcs[IsArc0(first_free) ? 0 : 1])) & (~1);
 	first_free = first_free->next;
 
 	Arc* _a[2] = { &arcs[0][e], &arcs[1][e] };
@@ -308,8 +311,8 @@ template <typename REAL>
 	_a[1]->sister->r_cap = _a[0]->sister->r_cap;
 }
 /*
-template <typename REAL>
-	inline bool QPBO<REAL>::AddDirectedConstraint(Arc* a, int xi, int xj)
+template <typename QPBO_REAL>
+	inline bool QPBO<QPBO_REAL>::AddDirectedConstraint(Arc* a, int xi, int xj)
 {
 	Node* i = a->sister->head;
 	Node* j = a->head;
@@ -317,7 +320,7 @@ template <typename REAL>
 	Node* _j[2];
 	Arc* _a[2] = { a, GetMate(a) };
 	int x; // 0 if current edge is submodular, 1 otherwise
-	REAL delta;
+	QPBO_REAL delta;
 
 	_j[0] = j;
 	if (IsNode0(j)) { _j[1] = GetMate0(j); x = 0; }
@@ -392,8 +395,8 @@ template <typename REAL>
 	return true;
 }
 */
-template <typename REAL>
-	inline bool QPBO<REAL>::AddDirectedConstraint0(Arc* a, int xi, int xj)
+template <typename QPBO_REAL>
+	inline bool QPBO<QPBO_REAL>::AddDirectedConstraint0(Arc* a, int xi, int xj)
 {
 	Node* i = a->sister->head;
 	Node* j = a->head;
@@ -401,7 +404,7 @@ template <typename REAL>
 	Node* _j[2];
 	Arc* _a[2] = { a, GetMate(a) };
 	int x; // 0 if current edge is submodular, 1 otherwise
-	REAL delta;
+	QPBO_REAL delta;
 
 	_j[0] = j;
 	if (IsNode0(j)) { _j[1] = GetMate0(j); x = 0; }
@@ -472,13 +475,13 @@ template <typename REAL>
 	return true;
 }
 
-template <typename REAL>
-	inline bool QPBO<REAL>::AddDirectedConstraint1(Arc* a, int xi, int xj)
+template <typename QPBO_REAL>
+	inline bool QPBO<QPBO_REAL>::AddDirectedConstraint1(Arc* a, int xi, int xj)
 {
 	Node* j = a->head;
 	Node* _j[2];
 	Arc* _a[2] = { a, GetMate(a) };
-	int x; // 0 if current edge is submodular, 1 otherwise
+	int x; GccUse(x);// 0 if current edge is submodular, 1 otherwise
 
 	_j[0] = j;
 	if (IsNode0(j)) { _j[1] = GetMate0(j); x = 0; }
@@ -506,13 +509,13 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	void QPBO<REAL>::AllocateNewEnergy(int* mapping)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::AllocateNewEnergy(int* mapping)
 {
 	int i_index, j_index;
 	int nodeNumOld = GetNodeNum();
 	int nodeNumNew = 1;
-	int edgeNumOld = GetMaxEdgeNum();
+	EdgeId edgeNumOld = GetMaxEdgeNum();
 	int e;
 	Node* i;
 
@@ -559,7 +562,7 @@ template <typename REAL>
 
 
 	AddNode(nodeNumNew);
-	AddUnaryTerm(0, (REAL)0, (REAL)1);
+	AddUnaryTerm(0, (QPBO_REAL)0, (QPBO_REAL)1);
 
 	i = nodes[0];
 	i->user_label = i->label = 0;
@@ -586,7 +589,7 @@ template <typename REAL>
 		} while (mapping[j_index] < 0);
 		y[x] = mapping[j_index];
 		y[1-x] = mapping[j_index] ^ 1;
-		
+
 		x = 0;
 		j_index = i_index;
 		do
@@ -599,7 +602,7 @@ template <typename REAL>
 	}
 
 	////////////////////////////////////////////////////////////////
-	int edgeNumNew = 0;
+	EdgeId edgeNumNew = 0;
 	for (e=0; e<edgeNumOld; e++)
 	{
 		if ( arcs[0][2*e].sister )
@@ -720,14 +723,14 @@ private:
 	int* prev;
 };
 
-template <typename REAL>
-	void QPBO<REAL>::SetMaxEdgeNum(int num)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::SetMaxEdgeNum(EdgeId num)
 {
 	if (num > GetMaxEdgeNum()) reallocate_arcs(2*num);
 }
 
-template <typename REAL>
-	bool QPBO<REAL>::Probe(int* mapping)
+template <typename QPBO_REAL>
+	bool QPBO<QPBO_REAL>::Probe(int* mapping)
 {
 	int i_index, i_index_next, j_index;
 	Node* i;
@@ -758,8 +761,8 @@ template <typename REAL>
 	all_edges_submodular = false;
 	Solve();
 
-	int MASK_CURRENT = 1;
-	int MASK_NEXT = 2;
+	signed char MASK_CURRENT = 1;
+	signed char MASK_NEXT = 2;
 
 	unlabeled_num = 0;
 	for (i=nodes[0], i_index=0; i<node_last[0]; i++, i_index++)
@@ -768,12 +771,12 @@ template <typename REAL>
 		{
 			FixNode(i, i->label);
 			mapping[i_index] = i->label;
-			i->is_removed = 1;
+			i->is_removed = true;
 			list.Remove(i_index);
 		}
 		else
 		{
-			i->is_removed = 0;
+			i->is_removed = false;
 			i->list_flag = MASK_CURRENT;
 			mapping[i_index] = -1;
 			unlabeled_num ++;
@@ -785,7 +788,7 @@ template <typename REAL>
 	maxflow();
 
 	// INVARIANTS:
-	//    node i_index is removed <=> mapping[i_index] >= 0 <=> nodes[0][i_index].is_removed == 1
+	//    node i_index is removed <=> mapping[i_index] >= 0 <=> nodes[0][i_index].is_removed == true
 	//    edge e is removed <=> Arc::sister does not point to the correct arc for at least one out of the 4 arcs
 
 
@@ -819,9 +822,9 @@ template <typename REAL>
 			_i[1] = GetMate0(i);
 			bool is_changed = false;
 
-			REAL INFTY0 = DetermineSaturation(i);
-			REAL INFTY1 = DetermineSaturation(_i[1]);
-			REAL INFTY = ((INFTY0 > INFTY1) ? INFTY0 : INFTY1) + 1;
+			QPBO_REAL INFTY0 = DetermineSaturation(i);
+			QPBO_REAL INFTY1 = DetermineSaturation(_i[1]);
+			QPBO_REAL INFTY = ((INFTY0 > INFTY1) ? INFTY0 : INFTY1) + 1;
 
 
 			// fix to 0, run maxflow
@@ -884,7 +887,7 @@ template <typename REAL>
 					mapping[j_index] = 2*i_index + 2 + j->label_after_fix0;
 					need_to_merge = true;
 				}
-				j->is_removed = 1;
+				j->is_removed = true;
 				if (i_index_next == j_index) i_index_next = list.GetNext(j_index);
 				list.Remove(j_index);
 				unlabeled_num --;
@@ -1034,7 +1037,7 @@ template <typename REAL>
 			{
 				j = *ptr;
 
-				j->is_in_changed_list = 0;
+				j->is_in_changed_list = false;
 				j->label_after_fix0 = -1;
 				j->label_after_fix1 = -1;
 
@@ -1048,7 +1051,7 @@ template <typename REAL>
 					j_index = (int)(j - nodes[0]);
 					FixNode(j, j->label);
 					mapping[j_index] = j->label;
-					j->is_removed = 1;
+					j->is_removed = true;
 					if (i_index_next == j_index) i_index_next = list.GetNext(j_index);
 					list.Remove(j_index);
 					unlabeled_num --;
@@ -1123,8 +1126,8 @@ template <typename REAL>
 }
 
 
-template <typename REAL>
-	void QPBO<REAL>::Probe(int* mapping, ProbeOptions& options)
+template <typename QPBO_REAL>
+	void QPBO<QPBO_REAL>::Probe(int* mapping, ProbeOptions& options)
 {
 	int nodeNum0 = GetNodeNum();
 	bool is_enough_memory;
@@ -1148,7 +1151,7 @@ template <typename REAL>
 				int ki = GetLabel(i);
 				if (ki >= 0)
 				{
-					AddUnaryTerm(i, 0, (REAL)(1-2*ki));
+					AddUnaryTerm(i, 0, (QPBO_REAL)(1-2*ki));
 					success = false;
 				}
 			}
@@ -1170,8 +1173,8 @@ template <typename REAL>
 	}
 }
 
-template <typename REAL>
-	bool QPBO<REAL>::Improve(int N, int* order_array, int* fixed_nodes)
+template <typename QPBO_REAL>
+	bool QPBO<QPBO_REAL>::Improve(int N, int* order_array, int* fixed_nodes)
 {
 	int p, i_index;
 	Node* i;
@@ -1190,6 +1193,7 @@ template <typename REAL>
 		maxflow(true);
 	}
 
+	int fixed = 0;
 	for (p=0; p<N; p++)
 	{
 		i_index = order_array[p];
@@ -1203,10 +1207,11 @@ template <typename REAL>
 		{
 			continue;
 		}
+		++fixed;
 
-		REAL INFTY0 = DetermineSaturation(i);
-		REAL INFTY1 = DetermineSaturation(_i[1]);
-		REAL INFTY = ((INFTY0 > INFTY1) ? INFTY0 : INFTY1) + 1;
+		QPBO_REAL INFTY0 = DetermineSaturation(i);
+		QPBO_REAL INFTY1 = DetermineSaturation(_i[1]);
+		QPBO_REAL INFTY = ((INFTY0 > INFTY1) ? INFTY0 : INFTY1) + 1;
 
 		if (i->user_label == 1) INFTY = -INFTY;
 
@@ -1219,6 +1224,7 @@ template <typename REAL>
 		AddUnaryTerm(i, 0, INFTY);
 		maxflow(true);
 	}
+	printf("Fixed %i of %i unknown nodes (%f %%)\n", fixed, N, 100.0f * fixed / N);
 
 	if (fixed_nodes) memset(fixed_nodes, 0, GetNodeNum()*sizeof(int));
 	for (ptr=fix_node_info_list->ScanFirst(); ptr; ptr=fix_node_info_list->ScanNext())
@@ -1233,18 +1239,18 @@ template <typename REAL>
 	{
 		i->label = what_segment(i);
 		if (i->label == what_segment(GetMate0(i))) i->label = i->user_label;
-		else if (i->label != (int)i->user_label)
+		else if (i->label != (signed char)i->user_label)
 		{
 			success = true;
-			i->user_label = (unsigned int)i->label;
+			i->user_label = (char)i->label;
 		}
 	}
 
 	return success;
 }
 
-template <typename REAL>
-	bool QPBO<REAL>::Improve()
+template <typename QPBO_REAL>
+	bool QPBO<QPBO_REAL>::Improve()
 {
 	int* permutation = new int[node_num];
 	ComputeRandomPermutation(node_num, permutation);
